@@ -68,11 +68,6 @@ class vocabHandler():
         c = 0
 
         for i in range(self.vocab_size):
-        #for i in range(len(idx2word)):
-            #print(self.vocab_size)
-            #print(len(idx2word))
-            #print(type(idx2word))
-            #print(i)
             w = idx2word[i]
             g = glove_index_dict.get(w, glove_index_dict.get(w.lower()))
             if g is None and w.startswith('#'): 
@@ -81,8 +76,20 @@ class vocabHandler():
             if g is not None:
                 embedding[i,:] = glove_embedding_weights[g,:]
                 c+=1
+            #print(embedding[i,:])
         print ('number of tokens, in small vocab, found in glove and copied to embedding', c,c/float(self.vocab_size))
 
+        return embedding
+
+    def get_X(self, word2idx, desc):
+        X = [[word2idx[token] for token in d.split()] for d in desc]
+        #plt.hist(map(len,X),bins=50);
+        return X
+
+    def get_Y(self, word2idx, heads):
+        Y = [[word2idx[token] for token in headline.split()] for headline in heads]
+        #plt.hist(map(len,Y),bins=50);
+        return Y
 
     def parse_dataset(self):
         FN0 = "sample-1M"
@@ -97,7 +104,7 @@ class vocabHandler():
                 j = j + 1
                 if j % 50000 == 0:
                     print(j)
-                if j == 10 :
+                if j == 200000 :
                     break
 
         print("")
@@ -109,6 +116,10 @@ class vocabHandler():
 
         glove_index_dict, glove_embedding_weights = self.get_index_weights()
 
-        embMatrix = self.get_emb_matrix(idx2word, glove_index_dict, glove_embedding_weights)
+        embedding = self.get_emb_matrix(idx2word, glove_index_dict, glove_embedding_weights)
 
+        X = self.get_X(word2idx, desc)
+        Y = self.get_Y(word2idx, heads)
+
+        return embedding, idx2word, word2idx, X, Y
         #return embMatrix
