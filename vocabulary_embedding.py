@@ -63,5 +63,8 @@ with open(glove_name, 'r') as fp :
         i += 1
 
 glove_embedding_weights *= global_scale
-print(glove_embedding_weights.std())
-print(glove_index_dict['of'])
+
+for w,i in glove_index_dict.iteritems():
+    w = w.lower()
+    if w not in glove_index_dict:
+        glove_index_dict[w] = i
