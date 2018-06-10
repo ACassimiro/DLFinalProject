@@ -66,6 +66,9 @@ class neuralNetwork():
         np.random.seed(seed)
         np.random.seed(seed)
 
+
+        
+
         regularizer = l2(weight_decay) if weight_decay else None
 
         model = Sequential()

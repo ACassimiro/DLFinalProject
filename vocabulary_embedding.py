@@ -18,6 +18,7 @@ class vocabHandler():
    
     # O counter conta as palavras mais comuns, e depois eu ordeno baseado na aparição
     def get_vocab(self, lst) :
+
         vocabcount = Counter(w for txt in lst for w in txt.split())
         vocab = map(lambda x: x[0], sorted(vocabcount.items(), key=lambda x: -x[1]))
         return vocab
