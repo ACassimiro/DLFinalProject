@@ -104,7 +104,7 @@ class vocabHandler():
                 j = j + 1
                 if j % 50000 == 0:
                     print(j)
-                if j == 200000 :
+                if j == 50000 :
                     break
 
         print("")
