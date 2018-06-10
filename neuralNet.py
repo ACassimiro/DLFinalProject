@@ -66,23 +66,19 @@ class neuralNetwork():
         np.random.seed(seed)
         np.random.seed(seed)
 
-
-        
-
         regularizer = l2(weight_decay) if weight_decay else None
 
         model = Sequential()
         model.add(Embedding(vocab_size, embedding_size,
-                            input_length=maxlen,
-                            W_regularizer=regularizer, weights=[embedding], mask_zero=True,
+                            input_length=maxlen, weights=[embedding],
+                            mask_zero=True, embeddings_regularizer=regularizer,
                             name='embedding_1'))
-        model.add(SpatialDropout1D(p=p_emb))
+        model.add(SpatialDropout1D(rate=p_emb))
         for i in range(rnn_layers):
             lstm = LSTM(rnn_size, return_sequences=True, # batch_norm=batch_norm,
-                        W_regularizer=regularizer, U_regularizer=regularizer,
-                        b_regularizer=regularizer, dropout_W=p_W, dropout_U=p_U,
-                        name='lstm_%d'%(i+1)
-                          )
+                        kernel_regularizer=regularizer, bias_regularizer=regularizer, recurrent_regularizer=regularizer,
+                        dropout=0, recurrent_dropout=0,
+                        name='lstm_%d'%(i+1))
             model.add(lstm)
             model.add(Dropout(p_dense,name='dropout_%d'%(i+1)))
 
@@ -102,14 +98,6 @@ class neuralNetwork():
             # activation for every head word and every desc word
             activation_energies = K.batch_dot(head_activations, desc_activations, axes=(2, 2))
             # make sure we dont use description words that are masked out
-
-            print()
-            print(activation_energies)
-            print(type(K.cast(mask[:, :maxlend], 'float32')))
-            print(1. - K.cast(mask[:, :maxlend], 'float32'))
-            print(K.cast(mask[:, :maxlend], 'float32'))
-            print(K.expand_dims(1. - K.cast(mask[:, :maxlend], 'float32'), 1))
-            print()
 
             activation_energies = activation_energies + -1e20 * K.expand_dims(
                 1. - K.cast(mask[:, :maxlend], 'float32'), 1)
@@ -171,9 +159,20 @@ if __name__ == "__main__":
     vocH = vocabHandler()
 
     embedding, idx2word, word2idx, X, Y = vocH.parse_dataset()
-
     nn = neuralNetwork()
+
+    empty  = 0
+    eos  =  1
+    idx2word[empty] = '_'
+    idx2word[eos] = '~'
+
     X_train, X_test, Y_train, Y_test = nn.split_sets(X, Y)
-    model = nn.create_model(embedding, idx2word, word2idx)
+
+    i = 1000
+    vocH.prt('H',Y_train[i], idx2word)
+    vocH.prt('D',X_train[i], idx2word)
+
+
+    #model = nn.create_model(embedding, idx2word, word2idx)
 
     #inspect_model(model)

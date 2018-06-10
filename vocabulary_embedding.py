@@ -5,7 +5,7 @@ from itertools import chain
 import keras
 import matplotlib.pyplot as plt
 import numpy as np
-
+import sys
 
 class vocabHandler():
     FN = 'vocabulary_embedding'
@@ -105,7 +105,7 @@ class vocabHandler():
                 j = j + 1
                 if j % 50000 == 0:
                     print(j)
-                if j == 50000 :
+                if j == 5000 :
                     break
 
         print("")
@@ -124,3 +124,11 @@ class vocabHandler():
 
         return embedding, idx2word, word2idx, X, Y
         #return embMatrix
+
+    def prt(self, label, X, idx2word):
+        print (label+':')
+        for w in X:
+            sys.stdout.write(idx2word[w] + " ")
+        print()
+
+
