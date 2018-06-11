@@ -82,6 +82,53 @@ class vocabHandler():
 
         return embedding
 
+    def get_gloveidx2idx(self, word2idx, idx2word, glove_index_dict, glove_embedding_weights, embedding, vocab_size):
+        glove_thr = 0.5
+        word2glove = {}
+        for w in word2idx:
+            if w in glove_index_dict:
+                g = w
+            elif w.lower() in glove_index_dict:
+                g = w.lower()
+            elif w.startswith('#') and w[1:] in glove_index_dict:
+                g = w[1:]
+            elif w.startswith('#') and w[1:].lower() in glove_index_dict:
+                g = w[1:].lower()
+            else:
+                continue
+            word2glove[w] = g
+
+        normed_embedding = embedding/np.array([np.sqrt(np.dot(gweight,gweight)) for gweight in embedding])[:,None]
+
+        nb_unknown_words = 100
+
+        glove_match = []
+        for w,idx in word2idx.items():
+            if idx >= vocab_size-nb_unknown_words and w.isalpha() and w in word2glove:
+                gidx = glove_index_dict[word2glove[w]]
+                gweight = glove_embedding_weights[gidx,:].copy()
+                # find row in embedding that has the highest cos score with gweight
+                gweight /= np.sqrt(np.dot(gweight,gweight))
+                score = np.dot(normed_embedding[:vocab_size-nb_unknown_words], gweight)
+                while True:
+                    embedding_idx = score.argmax()
+                    s = score[embedding_idx]
+                    if s < glove_thr:
+                        break
+                    if idx2word[embedding_idx] in word2glove :
+                        glove_match.append((w, embedding_idx, s)) 
+                        break
+                    score[embedding_idx] = -1
+        glove_match.sort(key = lambda x: -x[2])
+        print ('# of glove substitutes found', len(glove_match))
+
+        #for orig, sub, score in glove_match[-10:]:
+        #    print (score, orig,'=>', idx2word[sub])
+
+        glove_idx2idx = dict((word2idx[w],embedding_idx) for  w, embedding_idx, _ in glove_match)
+
+        return glove_idx2idx
+
     def get_X(self, word2idx, desc):
         X = [[word2idx[token] for token in d.split()] for d in desc]
         #plt.hist(map(len,X),bins=50);
@@ -119,10 +166,18 @@ class vocabHandler():
 
         embedding = self.get_emb_matrix(idx2word, glove_index_dict, glove_embedding_weights)
 
+        vocab_size, embedding_size = embedding.shape
+
+        glove_idx2idx = self.get_gloveidx2idx(word2idx, idx2word, glove_index_dict, glove_embedding_weights, embedding, vocab_size)
+
+        #print("")
+        #print(glove_idx2idx)
+        #print("")
+
         X = self.get_X(word2idx, desc)
         Y = self.get_Y(word2idx, heads)
 
-        return embedding, idx2word, word2idx, X, Y
+        return embedding, idx2word, word2idx, X, Y, glove_idx2idx
         #return embMatrix
 
     def prt(self, label, X, idx2word):
