@@ -71,11 +71,10 @@ class dataHandler():
 
         print("")
         print("ANTES")
-
         probs = model.predict(x, verbose=0, batch_size=batch_size)
-        
         print("DEPOIS")
         print("")
+
         
         x_out = x.copy()
         for b in range(batch_size):
@@ -86,7 +85,7 @@ class dataHandler():
             if debug and b < debug:
                 print (b)
             for input_idx in flips:
-                if x[b,input_idx] == self.empty or x[b,input_idx] == eos:
+                if x[b,input_idx] == self.empty or x[b,input_idx] == self.eos:
                     continue
                 # convert from input location to label location
                 # the output at maxlend (when input is eos) is feed as input at maxlend+1
