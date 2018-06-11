@@ -88,7 +88,7 @@ class neuralNetwork():
 
         #MODELO No 2
         """
-        give_prob = 0.5
+        #give_prob = 0.5
         model.add(LSTM(rnn_size, return_sequences=True))
         model.add(AttentionDecoder(rnn_size, vocab_size)
         #model.add(AttentionDecoder(rnn_size, vocab_size,return_probabilities=give_prob))
@@ -181,10 +181,10 @@ if __name__ == "__main__":
     traingen = dh.gen(X_train, Y_train, batch_size=batch_size, nflips=nflips, model=model)
     valgen = dh.gen(X_test, Y_test,  nb_batches=nb_val_samples//batch_size, batch_size=batch_size)
 
-    for iteration in range(100):
+    for iteration in range(5):
         print('Iteration', iteration)
-        h = model.fit_generator(traingen, samples_per_epoch=nb_train_samples,
-                            nb_epoch=1, validation_data=valgen, nb_val_samples=nb_val_samples)
+        h = model.fit_generator(traingen, validation_data=valgen, steps_per_epoch=nb_train_samples,
+                            epochs=3, validation_steps=nb_val_samples)
 
         model.save_weights('modelweights.hdf5', overwrite=True)
 
