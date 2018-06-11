@@ -70,10 +70,7 @@ class dataHandler():
         assert np.all(x[:,self.maxlend] == self.eos)
 
         print("")
-        print("ANTES")
         probs = model.predict(x, verbose=0, batch_size=batch_size)
-        print("DEPOIS")
-        print("")
 
         
         x_out = x.copy()

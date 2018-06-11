@@ -8,6 +8,7 @@ from keras.engine.topology import Layer
 from keras.layers import SpatialDropout1D
 from keras.layers.wrappers import TimeDistributed
 from keras.layers.recurrent import LSTM
+from attention_decoder import AttentionDecoder
 from keras.layers import RepeatVector
 from keras.layers.embeddings import Embedding
 from keras.layers.core import Lambda
@@ -30,7 +31,7 @@ maxlend=25 # 0 - if we dont want to use description at all
 maxlenh=25
 maxlen = maxlend + maxlenh
 rnn_size = 512 # must be same as 160330-word-gen
-rnn_layers = 3  # match FN1
+rnn_layers = 1 # match FN1
 batch_norm=False
 activation_rnn_size = 40 if maxlend else 0
 nb_train_samples = 30000
@@ -54,11 +55,16 @@ class neuralNetwork():
         model = Sequential()
         model.add(Embedding(vocab_size, embedding_size,
                             input_length=maxlen, weights=[embedding],
-                            mask_zero=True, embeddings_regularizer=regularizer,
-                            name='embedding_1'))
+                            mask_zero=True, name='embedding_1'))
+        print("Embedding Layer --- OK!")
         #model.add(SpatialDropout1D(rate=p_emb))
-        lstmPreRV = LSTM(rnn_size)
+        lstmPreRV = LSTM(rnn_size, return_sequences=True)
         model.add(lstmPreRV)
+        print("LSTM Layer --- OK!")
+        #model.add(AttentionDecoder(rnn_size, vocab_size))
+        print("Attention Layer --- OK!")
+
+        
         model.add(RepeatVector(maxlenh))
 
         for i in range(rnn_layers):
@@ -84,11 +90,27 @@ class neuralNetwork():
         #                                name = 'timedistributed_1')))
 
 
-        model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+        model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-        K.set_value(model.optimizer.lr,np.float32(LR))
+        #K.set_value(model.optimizer.lr,np.float32(LR))
 
         return model
+
+    '''def training(self, model, EPOCH, X, Y):
+        for k in range(EPOCH + 1):
+            indices = np.arange(len(X))
+            np.random.shuffle(indices)
+            X = X[indices]
+            Y = Y[indices]
+
+            for i in range(0, len(x), 2000):
+                if i + 2000 >= len(x):
+                    i_end = len(x)
+                else:
+                    i_end = i + 2000
+
+                y_sequence = '''
+
    
 def str_shape(x):
     return 'x'.join(map(str,x.shape))
@@ -128,6 +150,7 @@ if __name__ == "__main__":
     vocH = vocabHandler()
 
     embedding, idx2word, word2idx, X, Y, glove_idx2idx = vocH.parse_dataset()
+    print("EMBEDDING CRIADO")
     nn = neuralNetwork()
     nb_unknown_words = 10
 
@@ -142,28 +165,49 @@ if __name__ == "__main__":
     X_train, X_test, Y_train, Y_test = nn.split_sets(X, Y)
     batch_size = 10
 
+    
+    #Paddings
     model = nn.create_model(embedding, idx2word, word2idx)
-
+    model.summary()
+    print("MODELO CRIADO")
+    #Treinamento
 
     dh = dataHandler(oov0, glove_idx2idx, maxlend, maxlenh, vocab_size, nb_unknown_words)
     
     traingen = dh.gen(X_train, Y_train, batch_size=batch_size, nflips=nflips, model=model)
     valgen = dh.gen(X_test, Y_test,  nb_batches=nb_val_samples//batch_size, batch_size=batch_size)
 
-    for iteration in range(500):
+    for iteration in range(100):
         print('Iteration', iteration)
         h = model.fit_generator(traingen, samples_per_epoch=nb_train_samples,
-                            nb_epoch=1, validation_data=valgen, nb_val_samples=nb_val_samples
-                               )
+                            nb_epoch=1, validation_data=valgen, nb_val_samples=nb_val_samples)
+
+        model.save_weights('modelweights.hdf5', overwrite=True)
+
         #for k,v in h.history.items():
         #    history[k] = history.get(k,[]) + v
             
 
         #with open('data/%s.history.pkl'%FN,'wb') as fp:
         #    pickle.dump(history,fp,-1)
-        #model.save_weights('data/%s.hdf5'%FN, overwrite=True)
+        #
         #gensamples(batch_size=batch_size)
 
-    test_gen(dh.gen(X_train, Y_train, nflips=6, model=model, batch_size=batch_size), idx2word)
+    #TESTE
+    predictions = np.argmax(model.predict(X_test), axis=2)
+    sequences = []
+    for pred in predictions:
+        valids = [idx2word[index] for index in pred if index > 0]
+        sequence = ' '.join(valids)
+        sequences.append(sequence)
+
+
+    for i in range(len(X_test)):
+        print("Original Header " + Y_test[i])
+        print("Artificial Header " + sequences[i])
+        print("Text: " + X_test[i])
+        print("\n\n")
+
+    #test_gen(dh.gen(X_train, Y_train, nflips=6, model=model, batch_size=batch_size), idx2word)
 
     #inspect_model(model)
