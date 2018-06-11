@@ -34,8 +34,8 @@ rnn_size = 32 # must be same as 160330-word-gen
 rnn_layers = 1 # match FN1
 batch_norm=False
 activation_rnn_size = 40 if maxlend else 0
-nb_train_samples = 30000
-nb_val_samples = 3000
+nb_train_samples = 5000
+nb_val_samples = 1000
 
 
 class neuralNetwork():
@@ -58,14 +58,12 @@ class neuralNetwork():
                             mask_zero=True, name='embedding_1'))
         print("Embedding Layer --- OK!")
         
-        #model.add(SpatialDropout1D(rate=p_emb))
-        
+        #MODELO No 1 
+        """
+        """
         lstmPreRV = LSTM(rnn_size)
         model.add(lstmPreRV)
         print("LSTM Layer --- OK!")
-        
-        #model.add(AttentionDecoder(rnn_size, vocab_size))
-        #print("Attention Layer --- OK!")
         
         model.add(RepeatVector(maxlenh))
         print("Repeat Vector --- OK!")
@@ -77,22 +75,24 @@ class neuralNetwork():
                         dropout=0, recurrent_dropout=0,
                         name='lstm_%d'%(i+2))
             model.add(lstm)
-            #model.add(Dropout(p_dense,name='dropout_%d'%(i+1)))
-
+            print("LSTM Layer --- OK!")
+      
         model.add(TimeDistributed(Dense(vocab_size,
                                         name = 'timedistributed_1', kernel_regularizer=regularizer, 
                                         bias_regularizer=regularizer)))
 
-
         model.add(Activation('softmax', name='activation_1'))
-        #if activation_rnn_size:
-        #    simpleContext = SimpleContext(simple_context, rnn_size, name='simplecontext_1')
-        #    model.add(simpleContext)
+        """
+        """
 
-        #model.add(TimeDistributed(Dense(vocab_size,
-        #                                W_regularizer=regularizer, b_regularizer=regularizer,
-        #                                name = 'timedistributed_1')))
 
+        #MODELO No 2
+        """
+        give_prob = 0.5
+        model.add(LSTM(rnn_size, return_sequences=True))
+        model.add(AttentionDecoder(rnn_size, vocab_size)
+        #model.add(AttentionDecoder(rnn_size, vocab_size,return_probabilities=give_prob))
+        """
 
         model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
