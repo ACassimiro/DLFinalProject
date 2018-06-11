@@ -74,6 +74,7 @@ class neuralNetwork():
                                         bias_regularizer=regularizer)))
 
 
+        model.add(Activation('softmax', name='activation_1'))
         #if activation_rnn_size:
         #    simpleContext = SimpleContext(simple_context, rnn_size, name='simplecontext_1')
         #    model.add(simpleContext)
@@ -82,7 +83,6 @@ class neuralNetwork():
         #                                W_regularizer=regularizer, b_regularizer=regularizer,
         #                                name = 'timedistributed_1')))
 
-        model.add(Activation('softmax', name='activation_1'))
 
         model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
@@ -142,21 +142,28 @@ if __name__ == "__main__":
     X_train, X_test, Y_train, Y_test = nn.split_sets(X, Y)
     batch_size = 10
 
-    #print("")
-    #print(glove_idx2idx)
-    #print("")
     model = nn.create_model(embedding, idx2word, word2idx)
 
 
     dh = dataHandler(oov0, glove_idx2idx, maxlend, maxlenh, vocab_size, nb_unknown_words)
-    #test_gen(dh.gen(X_train, Y_train, batch_size=batch_size), idx2word)
+    
+    traingen = dh.gen(X_train, Y_train, batch_size=batch_size, nflips=nflips, model=model)
+    valgen = dh.gen(X_test, Y_test,  nb_batches=nb_val_samples//batch_size, batch_size=batch_size)
+
+    for iteration in range(500):
+        print('Iteration', iteration)
+        h = model.fit_generator(traingen, samples_per_epoch=nb_train_samples,
+                            nb_epoch=1, validation_data=valgen, nb_val_samples=nb_val_samples
+                               )
+        #for k,v in h.history.items():
+        #    history[k] = history.get(k,[]) + v
+            
+
+        #with open('data/%s.history.pkl'%FN,'wb') as fp:
+        #    pickle.dump(history,fp,-1)
+        #model.save_weights('data/%s.hdf5'%FN, overwrite=True)
+        #gensamples(batch_size=batch_size)
+
     test_gen(dh.gen(X_train, Y_train, nflips=6, model=model, batch_size=batch_size), idx2word)
-
-
-    i = 1000
-    #vocH.prt('H',Y_train[i], idx2word)
-    #vocH.prt('D',X_train[i], idx2word)
-
-
 
     #inspect_model(model)
