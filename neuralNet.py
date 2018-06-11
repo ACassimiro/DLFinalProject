@@ -30,7 +30,7 @@ nflips=10
 maxlend=25 # 0 - if we dont want to use description at all
 maxlenh=25
 maxlen = maxlend + maxlenh
-rnn_size = 512 # must be same as 160330-word-gen
+rnn_size = 32 # must be same as 160330-word-gen
 rnn_layers = 1 # match FN1
 batch_norm=False
 activation_rnn_size = 40 if maxlend else 0
@@ -57,15 +57,19 @@ class neuralNetwork():
                             input_length=maxlen, weights=[embedding],
                             mask_zero=True, name='embedding_1'))
         print("Embedding Layer --- OK!")
+        
         #model.add(SpatialDropout1D(rate=p_emb))
-        lstmPreRV = LSTM(rnn_size, return_sequences=True)
+        
+        lstmPreRV = LSTM(rnn_size)
         model.add(lstmPreRV)
         print("LSTM Layer --- OK!")
+        
         #model.add(AttentionDecoder(rnn_size, vocab_size))
-        print("Attention Layer --- OK!")
-
+        #print("Attention Layer --- OK!")
         
         model.add(RepeatVector(maxlenh))
+        print("Repeat Vector --- OK!")
+        
 
         for i in range(rnn_layers):
             lstm = LSTM(rnn_size, return_sequences=True, # batch_norm=batch_norm,
