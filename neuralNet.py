@@ -19,6 +19,7 @@ from sklearn.cross_validation import train_test_split
 from keras.optimizers import Adam, RMSprop
 import keras.backend as K
 import numpy as np
+import random
 import sys
 
 seed = 42
@@ -178,13 +179,14 @@ if __name__ == "__main__":
 
     dh = dataHandler(oov0, glove_idx2idx, maxlend, maxlenh, vocab_size, nb_unknown_words)
     
+    """
     traingen = dh.gen(X_train, Y_train, batch_size=batch_size, nflips=nflips, model=model)
     valgen = dh.gen(X_test, Y_test,  nb_batches=nb_val_samples//batch_size, batch_size=batch_size)
 
     for iteration in range(5):
         print('Iteration', iteration)
         h = model.fit_generator(traingen, validation_data=valgen, steps_per_epoch=nb_train_samples,
-                            epochs=3, validation_steps=nb_val_samples)
+                            epochs=1, validation_steps=nb_val_samples)
 
         model.save_weights('modelweights.hdf5', overwrite=True)
 
@@ -196,21 +198,51 @@ if __name__ == "__main__":
         #    pickle.dump(history,fp,-1)
         #
         #gensamples(batch_size=batch_size)
-
+    """
     #TESTE
-    predictions = np.argmax(model.predict(X_test), axis=2)
-    sequences = []
-    for pred in predictions:
-        valids = [idx2word[index] for index in pred if index > 0]
-        sequence = ' '.join(valids)
-        sequences.append(sequence)
+    model.load_weights("modelweights.hdf5")
+
+    random.seed(123456789+seed)
+    for t in range(20):
+        xds =[]
+        xhs =[]
+
+        xd = X_test[t]
+        s = random.randint(min(maxlend,len(xd)), max(maxlend,len(xd)))
+        xds.append(xd[:s])
+        
+        xh = Y_test[t]
+        s = random.randint(min(maxlenh,len(xh)), max(maxlenh,len(xh)))
+        xhs.append(xh[:s])
+
+        x, y = dh.conv_seq_labels(xds, xhs)
+
+        sequences = []
+        predictions = np.argmax(model.predict(x, verbose=0, batch_size=100), axis=2)
+
+        for pred in predictions:
+            valids = [idx2word[index] for index in pred if index > 0]
+            valids2 = [print(index) for index in pred if index > 0]
+            sequence = ' '.join(valids)
+            sequences.append(sequence)
 
 
-    for i in range(len(X_test)):
-        print("Original Header " + Y_test[i])
-        print("Artificial Header " + sequences[i])
-        print("Text: " + X_test[i])
+
+
+        xAux = ""
+        yAux = ""
+
+        for c in Y_test[t]:
+            yAux += idx2word[c] + " "
+
+        for c in X_test[t]:
+            xAux += idx2word[c] + " "
+
+        print("Original Header: " + yAux)
+        print("Artificial Header: " + sequences[0])
+        print("Text: " + xAux)
         print("\n\n")
+
 
     #test_gen(dh.gen(X_train, Y_train, nflips=6, model=model, batch_size=batch_size), idx2word)
 
