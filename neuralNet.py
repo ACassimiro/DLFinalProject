@@ -37,7 +37,7 @@ batch_norm=False
 activation_rnn_size = 40 if maxlend else 0
 nb_train_samples = 5000
 nb_val_samples = 1000
-
+nb_unknown_words = 10
 
 class neuralNetwork():
     def split_sets(self, X, Y):
@@ -157,7 +157,6 @@ if __name__ == "__main__":
     embedding, idx2word, word2idx, X, Y, glove_idx2idx = vocH.parse_dataset()
     print("EMBEDDING CRIADO")
     nn = neuralNetwork()
-    nb_unknown_words = 10
 
     vocab_size, embedding_size = embedding.shape
     oov0 = vocab_size - nb_unknown_words
@@ -170,8 +169,12 @@ if __name__ == "__main__":
     X_train, X_test, Y_train, Y_test = nn.split_sets(X, Y)
     batch_size = 10
 
+    print ('dimension of embedding space for words',embedding_size)
+    print ('vocabulary size', vocab_size, 'the last %d words can be used as place holders for unknown/oov words'%nb_unknown_words)
+    print ('total number of different words',len(idx2word), len(word2idx))
+    print ('number of words outside vocabulary which we can substitue using glove similarity', len(glove_idx2idx))
+    print ('number of words that will be regarded as unknonw(unk)/out-of-vocabulary(oov)',len(idx2word)-vocab_size-len(glove_idx2idx))
     
-    #Paddings
     model = nn.create_model(embedding, idx2word, word2idx)
     model.summary()
     print("MODELO CRIADO")
@@ -200,7 +203,8 @@ if __name__ == "__main__":
         #gensamples(batch_size=batch_size)
     """
     #TESTE
-    model.load_weights("modelweights.hdf5")
+
+    model.load_weights("modelweights_short_run.hdf5")
 
     random.seed(123456789+seed)
     for t in range(20):
@@ -214,6 +218,7 @@ if __name__ == "__main__":
         xh = Y_test[t]
         s = random.randint(min(maxlenh,len(xh)), max(maxlenh,len(xh)))
         xhs.append(xh[:s])
+
 
         x, y = dh.conv_seq_labels(xds, xhs)
 
@@ -240,8 +245,10 @@ if __name__ == "__main__":
 
         print("Original Header: " + yAux)
         print("Artificial Header: " + sequences[0])
-        print("Text: " + xAux)
+        #print("Text: " + xAux)
         print("\n\n")
+
+
 
 
     #test_gen(dh.gen(X_train, Y_train, nflips=6, model=model, batch_size=batch_size), idx2word)

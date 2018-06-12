@@ -158,7 +158,15 @@ class vocabHandler():
         print("")
         print("")
 
+        heads = [head.lower() for head in heads]
+        desc = [des.lower() for des in desc]
+
         vocab = self.get_vocab(heads + desc)
+
+        print()
+        print("VOCAB:")
+        print(len(list(vocab)))
+        print()
 
         word2idx, idx2word = self.get_idx(vocab)
 
